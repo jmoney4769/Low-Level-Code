@@ -1,0 +1,2 @@
+#!/bin/bash
+./prj5-client 127.0.0.1 4002

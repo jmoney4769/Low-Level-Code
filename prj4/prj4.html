@@ -1,0 +1,294 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+      <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+	<head><title>CS 2200 Fall 2013 Project 4</title></head>
+	<body>
+		<img align="left" src="2200.gif" alt="CS 2200 Systems and Networking" />
+		<h1>CS2200 Introduction to Systems and Networks<br />
+  Project 4<br />
+  Fall 2013<br /></h1>
+<hr />
+
+<h2>Overview</h2>
+     In this project, you will implement a multiprocessor operating system simulator using a popular userspace threading library for linux called pthreads. The framework for the multithreaded OS simulator is nearly complete, but missing one critical component: the CPU scheduler! Your task is to implement the CPU scheduler, using three different scheduling algorithms.<br /><br />
+
+	 <b>NOTE: MAKE SURE THAT MULTIPLE CPU CORES ARE TURNED ON IN YOUR VIRTUAL MACHINE</b><br /><br />
+     We have provided you with source files that provide the framework for your simulator. You will only need to modify answers.txt and student.c. However, just because you are only modifying two files doesn't mean that you should ignore the other ones - there is helpful information in the other files. Information about using the pthreads library is given in Problem 0.
+	 <br/> We have provided you these files:
+     <ul><li>Makefile - Working one provided for you; add as you wish but don't break it. </li>
+	     <li>os-sim.c - Code for the operating system simulator which calls your CPU scheduler.</li>
+	     <li>os-sim.h - Header file for the simulator. </li>
+	     <li>process.c - Descriptions of the simulated processes. </li>
+	     <li>process.h - Header file for the process data. </li>
+	     <li>student.c - This file contains stub functions for your CPU scheduler.</li>
+	     <li>student.h - Header file for your code to interface with the OS simulator </li></ul>
+<br />
+<u>Scheduling Algorithms</u><br />
+<br />
+For your simulator, you will implement the following three CPU scheduling algorithms:
+<ul><li><i>First In, First Out (FIFO)</i> - Runnable processes are kept in a ready queue. FIFO is non-preemptive; once a process begins running on a CPU, it will continue running until it either completes or blocks for I/O.
+<li><i>Round-Robin</i> - Similar to FIFO, except preemptive. Each process is assigned a timeslice when it is scheduled. At the end of the timeslice, if the process is still running, the process is preempted, and moved to the tail of the ready queue.</li>
+<li><i>Static Priority</i> - The processes with the highest priorities always get the CPU. Lower-priority processes may be preempted if a process with a higher priority becomes runnable.</li></ul>
+<u>Process States</u><br />
+<br />
+In our OS simulation, there are five possible states for a process, which are listed in the <tt>process_state_t</tt> enum in os-sim.h:<br />
+<br />
+<ul><li> NEW - The process is being created, and has not yet begun executing.</li>
+<li>READY - The process is ready to execute, and is waiting to be scheduled on a CPU.</li>
+<li>RUNNING - The process is currently executing on a CPU.</li>
+<li>WAITING - The process has temporarily stopped executing, and is waiting on an I/O request to complete.</li>
+<li>TERMINATED - The process has completed.</li></ul>
+There is a field named <tt>state</tt> in the PCB, which must be updated with the current state of the process. The simulator will use this field to collect statistics.<br />
+<center>
+<img src="states.gif" alt="Process States" /><br />
+Figure 1: Process States
+</center><br />
+<br />
+<u>The Ready Queue</u><br />
+<br />
+On most systems, there are a large number of processes, but only one or two CPUs on which to execute them. When there are more processes ready to execute than CPUs, processes must wait in the READY state until a CPU becomes available. To keep track of the processes waiting to execute, we keep a ready queue of the processes in the READY state.<br />
+<br />
+Since the ready queue is accessed by multiple processors, which may add and remove processes from the ready queue, the ready queue must be protected by some form of synchronization--for this project, it will be a mutex lock.  <strong>The ready queue SHOULD use a different mutex than the current mutex.</strong><br />
+<br />
+<u>Scheduling Processes</u><br />
+<br />
+<tt>schedule()</tt> is the core function of the CPU scheduler. It is invoked whenever a CPU becomes available for running a process. <tt>schedule()</tt> must search the ready queue, select a runnable process, and call the <tt>context_switch()</tt> function to switch the process onto the CPU.<br />
+<br />
+There is a special process, the idle process, which is scheduled whenever there are no processes in the READY state.<br />
+<br />
+<u>CPU Scheduler Invocation</u><br />
+<br />
+There are four events which will cause the simulator to invoke <tt>schedule()</tt>:<br />
+<br />
+<ol><li>yield() - A process completes its CPU operations and yields the processor to perform an I/O request.</li>
+<li>wake_up() - A process that previously yielded completes its I/O request, and is ready to perform CPU operations. wake_up() is also called when a process in the NEW state becomes runnable.</li>
+<li>preempt() - When using a Round-Robin or Static Priority scheduling algorithm, a CPU-bound process may be preempted before it completes its CPU operations.</li>
+<li>terminate() - A process exits or is killed.</li></ol>
+The CPU scheduler also contains one other important function: <tt>idle(). idle()</tt> contains the code that gets by the idle process. In the real world, the idle process puts the processor in a low-power mode and waits. For our OS simulation, you will use a pthread condition variable to block the thread until a process enters the ready queue.<br />
+<br />
+<u>The Simulator</u><br />
+<br />
+We will use pthreads to simulate an operating system on a multiprocessor computer. We will use one thread per CPU and one thread as a "supervisor" for our simulation. The CPU threads will simulate the currently-running processes on each CPU, and the supervisor thread will print output and dispatch events to the CPU threads.<br />
+<br />
+Since the code you write will be called from multiple threads, the CPU scheduler you write must be thread-safe! This means that all data structures you use, including your ready queue, must be protected using mutexes.<br />
+<br />
+The number of CPUs is specified as a command-line parameter to the simulator. For this project, you will be performing experiments with 1, 2, and 4 CPU simulations.<br />
+<br />
+Also, for demonstration purposes, the simulator executes much slower than a real system would. In the real world, a CPU burst might range from one to a few hundred <i>milliseconds</i>, whereas in this simulator, they range from 0.2 to 2.0 <i>seconds</i>.<br />
+<br />
+<center>
+<img src="functions.gif" alt="Simulator Function Calls" /><br />
+Figure 2: Simulator Function Calls<br />
+</center>
+<br />
+<u>Sample Output</u><br />
+<br />
+Compile and run the simulator with <tt>./os-sim 2</tt>. After a few seconds, hit Control-C to exit. You will see the output below:
+
+<pre>
+      Time  Ru Re Wa      CPU 0    CPU 1        &lt; I/O Queue &lt;
+
+      ===== == == ==      ======== ========     =============
+
+      0.0   0  0  0       (IDLE)   (IDLE)        &lt; &lt;
+
+      0.1   0  0  0       (IDLE)   (IDLE)        &lt; &lt;
+
+      0.2   0  0  0       (IDLE)   (IDLE)        &lt; &lt;
+
+      0.3   0  0  0       (IDLE)   (IDLE)        &lt; &lt;
+
+      0.4   0  0  0       (IDLE)   (IDLE)        &lt; &lt;
+
+      0.5   0  0  0       (IDLE)   (IDLE)        &lt; &lt;
+
+      0.6   0  0  0       (IDLE)   (IDLE)        &lt; &lt;
+
+      0.7   0  0  0       (IDLE)   (IDLE)        &lt; &lt;
+
+      0.8   0  0  0       (IDLE)   (IDLE)        &lt; &lt;
+
+      0.9   0  0  0       (IDLE)   (IDLE)        &lt; &lt;
+
+      1.0   0  0  0       (IDLE)   (IDLE)        &lt; &lt;
+
+      ......
+</pre>
+The simulator generates a Gantt Chart, showing the current state of the OS at every 100ms interval. The leftmost column shows the current time, in seconds. The next three columns show the number of Running, Ready, and Waiting processes, respectively. The next two columns show the process currently running on each CPU. The rightmost column shows the processes which are currently in the I/O queue, with the head of the queue on the left and the tail of the queue on the right.<br />
+<br />
+As you can see, nothing is executing. This is because we have no CPU scheduler to select processes to execute! Once you complete Problem 1 and implement a basic FIFO scheduler, you will see the processes executing on the CPUs.<br />
+<br />
+<u>Test Processes</u><br />
+<br />
+For this simulation, we will use a series of eight test processes, five CPU-bound and three I/O-bound. For simplicity, we have labelled each starting with a "C" or "I" to indicate CPU-bound or I/O-bound.<br />
+<br />
+<table border="1">
+<tr><td>PID</td><td>Process Name</td><td>CPU / I/O-bound</td><td>Priority</td><td>Start Time</td></tr>
+<tr><td>0</td><td>Iapache</td><td>I/O-bound</td><td>8</td><td>0.0 s</td></tr>
+<tr><td>1</td><td>Ibash</td><td>I/O-bound</td><td>7</td><td>1.0 s</td></tr>
+<tr><td>2</td><td>Imozilla</td><td>I/O-bound</td><td>7</td><td>2.0 s</td></tr>
+<tr><td>3</td><td>Ccpu</td><td>CPU-bound</td><td>5</td><td>3.0 s</td></tr>
+<tr><td>4</td><td>Cgcc</td><td>CPU-bound</td><td>1</td><td>4.0 s</td></tr>
+<tr><td>5</td><td>Cspice</td><td>CPU-bound</td><td>2</td><td>5.0 s</td></tr>
+<tr><td>6</td><td>Cmysql</td><td>CPU-bound</td><td>3</td><td>6.0 s</td></tr>
+<tr><td>7</td><td>Csim</td><td>CPU-bound</td><td>4</td><td>7.0 s</td></tr>
+</table><br />
+For this project, priorities range from 0 to 10, with 10 being the highest priority. Note that the I/O-bound processes have been given higher priorities than the CPU-bound processes.<br />
+
+<h2> Problem 0: pthreads </h2>
+<i>[0 points]</i>
+<br />
+If you have never used pthreads before (I would be pleasantly surprised if you have), take a minute to look up some documentation, and make a small multi-threaded program where two threads print the numbers 1 - 1000 so that you understand the lifecycle of threads.
+<br /><br />
+We won't be going into detailed examples because there already exist some excellent resources for using pthreads:
+<ul><li>man pages for all the relevant pthread library calls. In particular, look at <i>pthread_mutex_init</i>, <i>pthread_mutex_lock</i>, <i>pthread_cond_init</i>, <i>pthread_cond_broadcast</i>, <i>and pthread_cond_wait</i>.</li>
+	<li><a href="http://www.llnl.gov/computing/tutorials/pthreads/">http://www.llnl.gov/computing/tutorials/pthreads/</a></li></ul>
+<br />
+<b>An important note</b> for when you get to using <i>pthread_cond_wait</i>: Please please please use it in a <i>while</i> loop instead of an <i>if</i> statement. If you look carefully, the pthread documentation says that pthread_cond_wait may return even without having acquired the lock. Don't worry about this part right now. You'll know when you get to it, and hopefully you'll look back at this when you realize you're typing <i>pthread_cond_wait</i>. This may causes completely untraceable bugs in your programs.
+
+
+<h2>Problem 1: FIFO Scheduler</h2>
+A. <i>[50 points]</i> - Implement the CPU scheduler using the FIFO scheduling algorithm. You may do this however you like, however, we suggest the following:<br />
+<ul><li>Implement a thread-safe ready queue using a linked list. A linked list will allow you to reuse this ready queue for the Round-Robin and Static Priority scheduling algorithms.</li>
+<li>Implement the <tt>yield()</tt>, <tt>wake_up()</tt>, and <tt>terminate()</tt> handlers. <tt>preempt()</tt> is not necessary for this stage of the project. See the overview and the comments in the code for the proper behavior of these events.</li>
+<li>Implement <tt>idle()</tt>. <tt>idle()</tt> must wait on a condition variable that is signalled whenever a process is added to the ready queue.</li>
+<li>Implement <tt>schedule()</tt>. <tt>schedule()</tt> should extract the first process in the ready queue, then call <tt>context_switch()</tt> to select the process to execute. If there are no runnable processes, <tt>schedule()</tt> should call <tt>context_switch()</tt> with a NULL pointer as the PCB to execute the idle process.</li></ul>
+<br />
+<p>
+<strong>Before you begin working please look at the contents of this file <a href="os-sim.h">os-sim.h</a> for a list of functions prototypes and a description of the currently used data structures.</strong>
+</p>
+Once you successfully complete this portion of the project, test your code with ./os-sim 1, and you should see output similar to the following:
+<pre>
+
+
+      Time  Ru Re Wa      CPU 0         I/O Queue
+
+      ===== == == ==      ========     =============
+
+      0.0   0  0  0       (IDLE)       &lt; &lt;
+
+      0.1   1  0  0       Iapache      &lt; &lt;
+
+      0.2   1  0  0       Iapache      &lt; &lt;
+
+      0.3   1  0  0       Iapache      &lt; &lt;
+
+      0.4   0  0  1       (IDLE)       &lt; Iapache &lt;
+
+      0.5   0  0  1       (IDLE)       &lt; Iapache &lt;
+
+      0.6   1  0  0       Iapache      &lt; &lt;
+
+      0.7   1  0  0       Iapache      &lt; &lt;
+
+      0.8   1  0  0       Iapache      &lt; &lt;
+
+      0.9   1  0  0       Iapache      &lt; &lt;
+
+      1.0   0  0  1       (IDLE)       &lt; Iapache &lt;
+
+      1.1   1  0  1       Ibash        &lt; Iapache &lt;
+
+      1.2   1  0  1       Ibash        &lt; Iapache &lt;
+
+      1.3   1  0  1       Ibash        &lt; Iapache &lt;
+
+      1.4   1  0  1       Ibash        &lt; Iapache &lt;
+
+      1.5   1  0  1       Iapache      &lt; Ibash &lt;
+
+      1.6   1  0  1       Iapache      &lt; Ibash &lt;
+
+      1.7   0  0  2       (IDLE)       &lt; Ibash Iapache &lt;
+
+      1.8   0  0  2       (IDLE)       &lt; Ibash Iapache &lt;
+
+      1.9   0  0  2       (IDLE)       &lt; Ibash Iapache &lt;
+
+      2.0   1  0  1       Ibash        &lt; Iapache &lt;
+
+      ....
+
+      66.9  1  1  0       Ibash        &lt; &lt;
+
+      67.0  1  1  0       Ibash        &lt; &lt;
+
+      67.1  1  1  0       Ibash        &lt; &lt;
+
+      67.2  1  0  0       Imozilla     &lt; &lt;
+
+      67.3  1  0  0       Imozilla     &lt; &lt;
+
+      67.4  1  0  0       Imozilla     &lt; &lt;
+
+      67.5  1  0  0       Imozilla     &lt; &lt;
+
+
+
+
+
+      # of Context Switches: 97
+
+      Total execution time: 67.6 s
+
+      Total time spent in READY state: 389.9 s
+
+      (These numbers may be slightly different for you)
+	
+</pre>
+<br />
+<ul><li>Be sure to update the state field of the PCB. The library will read this field to generate the Running, Ready, and Waiting columns, and to generate the statistics at the end of the simulation.</li>
+<li>There is a field in the PCB, <tt>next</tt>, which you may use to build linked lists of PCBs.</li>
+<li>Four of the five entry points into the scheduler (<tt>idle()</tt>, <tt>yield()</tt>, <tt>terminate()</tt>, and <tt>preempt()</tt>) should cause a new process to be scheduled on the CPU. In your handlers, be sure to call <tt>schedule()</tt>, which will select a runnable process, and then call <tt>context_switch()</tt>. When these four functions return, the library will simulate the process selected by <tt>context_switch()</tt>.</li>
+<li><tt>context_switch()</tt> takes a timeslice parameter, which is used for preemptive scheduling algorithms. Since FIFO is non-preemptive, use -1 for this parameter to give the process an infinite timeslice.</li></ul>
+<br />
+B. <i>[10 points]</i> Run your OS simulation with 1, 2, and 4 CPUs. Compare the total execution time of each. Is there a linear relationship between the number of CPUs and total execution time? Why or why not?<br />
+
+<h2>Problem 2: Round-Robin Scheduler</h2>
+
+A. <i>[10 points]</i> Add Round-Robin scheduling functionality to your code. You should modify <tt>main()</tt> to add a command line option, <tt>-r</tt>, which selects the Round-Robin scheduling algorithm, and accepts a parameter, the length of the timeslice. For this project, timeslices are measured in tenths of seconds. E.g.:<br />
+<br />
+<tt>./os-sim &lt;# CPUs&gt; -r 5</tt><br />
+<br />
+should run a Round-Robin scheduler with timeslices of 500 ms. While:<br />
+<br />
+<tt>./os-sim &lt;# of CPUs&gt;</tt><br />
+<br />
+should continue to run a FIFO scheduler.
+You should also make sure preempt is implemented in this section of the project.
+<br />
+<br />
+To specify a timeslice when scheduling a process, use the timeslice parameter of <tt>context_switch()</tt>. The simulator will automatically preempt the process and call your <tt>preempt()</tt> handler if the process executes on the CPU for the length of the timeslice without terminating or yielding for I/O.<br />
+<br />
+B. <i>[10 points]</i> Run your Round-Robin scheduler with timeslices of 800ms, 600ms, 400ms, and 200ms. Use only one CPU for your tests. Compare the statistics at the end of the simulation. Show that the total waiting time decreases with shorter timeslices. However, in a real OS, the shortest timeslice possible is usually not the best choice. Why not?<br />
+
+<h2> Problem 3: Static Priority Scheduling</h2>
+
+A. <i>[10 points]</i> Add Static Priority scheduling to your code. Modify <tt>main()</tt> to accept the <tt>-p</tt> parameter to select the Static Priority algorithm. The <tt>-r</tt> and default FIFO scheduler should continue to work.<br />
+<br />
+The scheduler should use the priority specified in the static_priority field of the PCB. This priority is a value from 0 to 10, with 0 being the lowest priority and 10 being the highest priority.<br />
+<br />
+For Static Priority scheduling, you will need to make use of the <tt>current[]</tt> array and <tt>force_preempt()</tt> function. The <tt>current[]</tt> array should be used to keep track of the process currently executing on each CPU. Since this array is accessed by multiple CPU threads, it must be protected by a mutex. <tt>current_mutex</tt> has been provided for you.<br />
+<br />
+The <tt>force_preempt()</tt> function preempts a running process before its timeslice expires. Your <tt>wake_up()</tt> handler should make use of this function to preempt a lower priority process when a higher priority process needs a CPU.<br />
+<br />
+B. <i>[10 points]</i> The Shortest-Job First (SJF) scheduling algorithm is proven to have the optimal average waiting time. However, it is only a theoretical algorithm; it cannot be implemented in a typical CPU scheduler, because the scheduler does not have advance knowledge of the length of each CPU burst.<br /><br />
+Run each of your three scheduling algorithms (using one CPU), and compare the total waiting times. Which algorithm is the closest approximation of SJF? Why?
+
+<h2>Assignment Submission</h2>
+
+<br /><br />
+Be sure to turn in the following files, plus any more needed to make your project run. Failure to include all files will result in lost points. <strong>It is suggested that you just turn in the entire folder again with your modified files.</strong> Turning in a project that does not compile will result in a zero. Remember, turn in everything that is required by your makefile. If your makefile doesn't work, we can't grade your project.<br />
+<ul><li>answers.txt - Short answers to questions from above.</li>
+<li>Makefile - Working one provided for you; don't break it.</li>
+<li>os-sim.c - Code for the operating system simulator.</li>
+<li>os-sim.h - Header file for the simulator.</li>
+<li>process.c - Descriptions of the simulated processes.</li>
+<li>process.h - Header file for the process data.</li>
+<li>student.c - Your code for the scheduler.</li>
+<li>student.h - Header file for your scheduler code.</li></ul>
+
+Keep your answers detailed enough to cover the question, including support from simulator results if appropriate. Don't write a book; but if you're not sure about an answer, err on the side of giving us too much information.
+<hr />
+</body>
+</html>

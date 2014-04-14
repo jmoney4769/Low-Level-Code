@@ -1,0 +1,7 @@
+#!/bin/bash
+rm ~/CS2200/prj5/*.c
+cp ~/workspace/NetworkProject/*.c ~/CS2200/prj5
+make clean
+make
+./prj5-client 127.0.0.1 4002
+

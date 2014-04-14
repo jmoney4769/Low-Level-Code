@@ -1,0 +1,228 @@
+<html>
+<title> CS2200 Spring 2014 Project 5</title>
+
+<body bgcolor="white">
+
+<h1>
+<table>
+<tr>
+<td><h1>CS2200 Intro to Systems and Networks<br>Project 5 -
+Implementing a Reliable Network<br>Spring 2014</h1></td>
+</tr>
+</table>
+</h1>
+
+<h3>Useful links for understanding C socket programming:</h3>
+<ul>
+    <li><a href="http://beej.us/guide/bgnet/">http://beej.us/guide/bgnet/</a> (well-written,
+        comprehensive guide to C socket networking programming)
+    <li><a href="http://linux.die.net/man/7/socket">http://linux.die.net/man/7/socket </a>
+        (man page for socket() function to create C sockets)
+    <li><a href="http://linux.die.net/man/3/recvfrom">http://linux.die.net/man/3/recvfrom</a>
+        (man page for recvfrom() function for UDP sockets)</li>
+    <li><a href="http://linux.die.net/man/3/sendto">http://linux.die.net/man/3/sendto</a>
+        (man page sendto function() for UDP sockets)</li>
+    <li><a href="http://linux.die.net/man/3/getaddrinfo">http://linux.die.net/man/3/getaddrinfo</a>
+        (man page for getaddrinfo() used to resolve variables for socket()</li>
+</ul>
+
+<h2>Learning Objective:</h2>
+The learning objective is to help you understand that each layer in the network protocol stack has a different purpose and to guide you through 'upgrading' the transport layer of an artificial network in order to make the entire network more reliable.
+
+Specifically, this project was designed to:
+<ul>
+	<li>demonstrate how messages are segmented into packets and how
+	they are reassembled.</li>
+	<li>help the student understand why a checksum is needed and
+	when it is used.</li>
+	<li>have the student understand and implement the stop-and-wait
+	protocol with ACKnowledgements, Negative (NACK) Acknowledgements,
+	and retransmissions.</li>
+</ul>
+
+<b>* Refer to Chapter 13.6.1 in the book for its description of stop-n-wait.</b>
+
+<h2>The Protocol Stack:</h2>
+
+We have provided you with code that implements the network protocol:
+<pre>
+     _______________________
+    |   Application Layer   |    <--- client.c
+    |-----------------------|
+    |    Transport Layer    |    <--- rtp.c
+    |-----------------------|
+    |     Network Layer     |    
+    |-----------------------|
+    |    Physical  Layer    |
+    |_______________________|
+</pre>
+
+<ul>
+<li>The physical layer and network layer are implemented by the operating system and the underlying network
+hardware.</li>
+<li> For the sake of this project, we will be using the UDP Transport protocol interface 
+to emulate an 'unreliable' network layer </li>
+<li>The application layer represents the end user application.  The application
+simply makes the appropriate API calls to connect to remote hosts, send and
+receive messages, and disconnect from remote hosts.</li>
+</ul>
+
+<h2>Code Walk-Through:</h2>
+
+Here, we will briefly describe the code provided for this project.  It is
+important that you study and understand the code given to you.  In the past,
+we have asked students to write a large portion of this code, but we
+found this to be unreasonable during the last few weeks of school.  As
+a compromise, we have given you this code and simply ask you to complete it.
+However, YOU ARE RESPONSIBLE FOR UNDERSTANDING ALL OF THE CLIENT CODE.
+<br><br>
+
+The client program takes two arguments.  The first argument is the server
+it should connect to (such as localhost), and the second
+argument is the port it should connect to (such as 4000).  Thus, the
+client can be run as follows:<br />
+<pre>
+        ./prj5-client localhost 4000
+</pre>        
+
+The client.c program represents the application layer.  It uses the services
+provided by the transport layer (rtp.c).  It begins by connecting to the
+remote host.  Look at the socket_setup() function in rtp.c. It creates the UDP socket
+we're using to work on the Network Layer unreliably.  Next, the socket_setup() 
+function initializes and returns its CONN_INFO structure.<br><br>
+
+Next, the client program sends a message to the remote host using
+rtp_send_message().  <br /><br />
+
+Next, the client program receives a message from the network.  What happens
+if a message isn't available or the entire message has not yet been received?
+The rtp_receive_message() function should block until a message is received from
+ the remote server.
+<br /><br />
+
+The client program continues to send and receive messages until it is
+finished.  Last, the client program calls rtp_disconnect() to terminate
+the connection with the remote host. 
+<br /><br />
+
+A note on the network packets.  For the purposes of this project, there are
+four packet types:
+<ul>
+  <li>DATA - a data packet that contains part of a message in its payload.
+  <li>LAST_DATA - just like a data packet, but also signifies that it is
+                  the last packet in a message.
+  <li>ACK - acknowledges the receipt of the last packet
+  <li>NACK - a negative acknowledgement stating that the last packet received
+             was corrupted.
+  <li> TERM - a packet type meant to be able to tell the server to close the connection
+             early (not specifically needed for the project)
+</ul>
+
+<h2>Part I:  Segmentation of Data</h2>
+
+When data is sent over a network, the data is chopped up into one or more
+parts and sent inside packets.  A packet contains information that describes
+the message such as the destination of the data, the source of the data, and
+the data itself!  The data being sent over the network is referred to as
+the 'payload'.  Look in rtp.h; what other fields does our network packet
+carry?  Think about why each field is needed.  How much payload data can we
+fit into each packet?  (Note: as with many things in this project, the packet
+data structure is simplified). <br><br>
+
+<b>(20 Points)</b> Open rtp.c and find the <code>packetize()</code> function.  Complete
+this function.  Its purpose is to turn a message into an array of packets.
+It should:
+ <ol>
+   <li>Allocate an array of packets big enough to carry all of the data.
+   <li>Populate all the fields of the packet including the payload.  Remember,
+       The last packet should be a LAST_DATA packet.  All other packets should
+       be DATA packets.  THIS IS IMPORTANT.  The server checks for this, and it
+       will disconnect you if they are not filled in correctly.  If you neglect
+       the LAST_DATA packet, your program will hang forever waiting for a response
+       from the server, because it is waiting on you forever to send a terminating
+       packet.
+   <li>The 'count' variable points to an integer.  Update this integer setting
+       it equal to the length of the array you are returning.
+   <li>Return the array of packets.
+ </ol>
+
+Hint: Remember that this is integer division. If length % MAX_PAYLOAD_LENGTH = 0
+this is a special case that should be handled.
+<br><br>
+There are several other parts of the source code that say FIX ME!  The
+code to be inserted in these parts of the program will simply provide
+additional functionality but are not necessary at this time.  We will
+return to these parts of the code in Part II.<br /><br />
+
+<h2>Part II:  When things go wrong.</h2>
+In the stop-and-wait protocol, sending a message requires the following 
+additional steps:
+<ol>
+   <li>Sends one packet at a time.
+   <li>After each packet, wait for an ACK or a NACK to be received.
+   <li>If a NACK is received, resend the last packet.  Otherwise, send
+       the next packet.
+</ol>
+Receiving a message requires the following additional steps:
+<ol>
+   <li>Compute the checksum for each packet payload upon arrival.
+   <li>If the checksum does not match the checksum reported in the
+       packet header, send a NACK.  If it does match, send an ACK.
+</ol>
+
+<em>NOTE:</em> Most typical stop-n-wait protocols also implement a sequence number
+to handle completely lost packets. We will ignore this issue for the sake of keeping
+the project implementable in the given time.
+<br/></br/>
+
+<b>(Part A, 20 Points)</b> Open rtp.c and find the <code>checksum()</code> function.
+Complete this function.  Simply sum the ASCII values of each character in the
+buffer and return the sum.  This is how the server computes the checksum
+and the server and client must compute the checksum the same way.<br><br>
+
+<b>(Part B, 30 Points)</b> Open rtp.c and find the <code>rtp_receive_message()</code>
+function. This message is for receiving messages from the connection. To do this,
+you will use CONN_INFO & the <a href="http://linux.die.net/man/3/recvfrom">recvfrom()</a></href>
+function If the packet is a DATA packet, the payload is added to the current 
+message buffer.  The packet's payload should 
+only be added to the buffer if the checksum of the data matches the checksum in the
+packet header. If the checksum's match, you should send an response packet (using
+ <a href="http://linux.die.net/man/3/sendto">sendto()</a>) of ACK type with
+and empty payload. If the checksums don't match, you should send a NACK packet in the
+same manner.<br/><br/>
+
+<b>(Part C, 30 Points)</b> Open rtp.c and find the <code>rtp_send_message()</code>
+function.  This function should handle packetizing the message and sending the 
+packets one by one via <a href="http://linux.die.net/man/3/sendto">sendto()</a>.
+You should then accept the server's response using <a href="http://linux.die.net/man/3/recvfrom">recvfrom()</a>.
+If the response is an ACK, you should send the next packet, otherwise resend the packet.
+Continue to do this until all packets have been sent<br/><br/>
+
+<h2>About running the project:</h2>
+The general server syntax is <code>./prj5-server.py -p port [-c corruption]</code>.
+<br/>
+<b>Your client should work with a completely UNMODIFIED version of the server.</b>.
+<br/><br/>
+<b>Example Run:</b>
+<ol>
+    <li>Run <code>make</code> to compile the client.</li>
+    <li>Run <code>./prj5-server.py -p 4000 -c .4 </code> to start the server to 
+        listen on port 4000 with a 40% corruption rate.</li>
+    <li>Run <code>./prj5-client 127.0.0.1 4000</code> to run the client to connect
+        a server on your local machine on port 4000.</li>
+</ol>
+The server will take in your string message and respond with the string in pig latin.
+The server should be printing out debug statements to help you follow the flow of what it 
+is doing.
+
+<h2><font color="#000000">Good luck!</font></h2>
+Try not to start late on this project. It is important you understand these
+concepts for the final examination. It is also important to note that we will be 
+grading with corruption enabled.
+
+<h1>Submission:</h1>
+
+Type <code>make submit</code> and submit the tar.gz file generated.
+<br/><br/>
+</body>
+</html>

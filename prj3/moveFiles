@@ -1,0 +1,11 @@
+#!/bin/bash 
+rm ~/CS2200/prj3/student-src/*
+rm ~/CS2200/prj3/simulator-src/*
+cp ~/workspace/MemoryProject/student-src/* ~/CS2200/prj3/student-src
+cp ~/workspace/MemoryProject/simulator-src/* ~/CS2200/prj3/simulator-src
+make clean
+make all
+./vm-sim references/basic
+./vm-sim references/eviction
+./vm-sim references/tlb
+./vm-sim references/everything

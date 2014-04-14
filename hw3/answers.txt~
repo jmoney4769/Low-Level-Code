@@ -1,0 +1,214 @@
+CS 2200 Spring 2014
+Homework 3
+===================
+Name: Jared Moore
+T-Square Login: jmoore99
+
+---------
+Problem 1
+---------
+
+~~~~~~
+Part 1
+~~~~~~
+There is a two-cycle delay because the result of the BEQ instruction cannot be determined until its EX stage, which is two cycles into the instruction
+
+~~~~~~
+Part 2
+~~~~~~
+
+
+---------
+Problem 2
+---------
+
+~~~~~~
+Part 1
+~~~~~~
+a)
+                       Stage
+Cycle     IF      ID      EX      MEM      WB
+-----     --      --      --      ---      --
+  1       LW       ?       ?       ?        ?
+  2	  X	  LW	   ?	   ?	    ?
+  3	  ADD	   X	  LW	   ?	    ?	
+  4	  X	 ADD	   X	  LW	    ?
+  5	  X	   X	 ADD	   X	   LW	
+  6	  X	   X	   X	 ADD	    X
+  7	  SW	   X	   X	   X	  ADD
+  8	  ADDI	  SW	   X	   X	    X
+  9	  X	ADDI	  SW	   X	    X
+ 10	  X	   X	ADDI	  SW	    X
+ 11	  X	   X	   X	ADDI	   SW
+ 12	  BEQ	   X	   X	   X	 ADDI
+ 13	  BEQ	 BEQ	   X	   X	    X
+ 14	  LW	 BEQ	 BEQ	   X	    X
+ 15	  X	  LW	 BEQ	 BEQ	    X
+ 
+b) 	15 cycles / 4 instructions completed = 3.75 CPI
+
+c)	(3.75 cycles / instructions) * (6 instructions / loop) * (5000000 loops) / (1 * 10^9 cycles / second) = 0.1125 seconds
+
+~~~~~~
+Part 2
+~~~~~~
+a)
+                       Stage
+Cycle     IF      ID      EX      MEM      WB
+-----     --      --      --      ---      --
+  1       LW       ?       ?       ?        ?
+  2	   X	  LW	   ?	   ?	    ?
+  3	 ADD	   X	  LW	   ?	    ?
+  4	   X	 ADD	   X	  LW	    ?
+  5	  SW	   X	 ADD	   X	   LW
+  6	ADDI	  SW	   X	 ADD	    X
+  7	   X	ADDI	  SW	   X	  ADD
+  8	 BEQ	   X	ADDI	  SW	    X
+  9	 BEQ	 BEQ	   X	ADDI	   SW
+ 10	  LW	 BEQ	 BEQ	   X	 ADDI
+ 11	   X	  LW	 BEQ 	 BEQ	    X
+ 12	 ADD	   X	  LW	 BEQ	  BEQ
+ 13	   X	 ADD	   X	  LW	  BEQ
+ 14	  SW	   X	 ADD	   X	   LW
+ 15	ADDI	  SW	   X	 ADD	    X
+ 
+b) 15 cycles / 7 instructions completed = 2.14 CPI
+
+c) (2.14 cycles / instructions) * (6 instructions / loop) * (5000000 loops) / (1 * 10^9 cycles / second) = 0.0642 seconds
+
+~~~~~~
+Part 3
+~~~~~~
+
+a) There are 3:  ADD after LW ($t0), SW after ADD ($t0), and BEQ after ADDI ($a0)
+b) There are 2:  1 associated with each branch instruction
+c) There is 1:  Trying to access $t0 after the LW instruction
+
+---------
+Problem 3
+---------
+
+~~~~~~
+Part 1
+~~~~~~
+
+*Remember the process is no longer waiting once finished.
+
+FCFS:
+                         11111111112222222222
+        time:  012345678901234567890123456789
+               ------------------------------
+     P1        RRRRR
+     P2        wwwwwRRRR
+     P3        wwwwwwwwwR
+     P4        wwwwwwwwwwRRRRRR
+     P5        wwwwwwwwwwwwwwwwRR
+
+
+SJF:
+                         11111111112222222222
+        time:  012345678901234567890123456789
+               ------------------------------
+     P1        wwwwwwwRRRRR
+     P2        wwwRRRR
+     P3        R
+     P4        wwwwwwwwwwwwRRRRRR
+     P5        wRR
+
+
+Nonpreemptive priority:
+                         11111111112222222222
+        time:  012345678901234567890123456789
+               ------------------------------
+     P1        wwwwwwRRRRR
+     P2        wwwwwwwwwwwwwwRRRR
+     P3        wwwwwwwwwwwR
+     P4        RRRRRR
+     P5        wwwwwwwwwwwwRR
+
+
+RR:
+                         11111111112222222222
+        time:  012345678901234567890123456789
+               ------------------------------
+     P1        RwwwwRwwwRwwRwwR
+     P2        wRwwwwRwwwRwwR
+     P3        wwR
+     P4        wwwRwwwRwwwRwwRwRR
+     P5        wwwwRwwwR
+
+
+~~~~~~
+Part 2
+~~~~~~
+
+
+a) Waiting Times:
+       | FCFS  | SJF   | Priority | RR    |
+       ------------------------------------
+    P1 |   0   |   7   |    6     |   11  |
+    P2 |   5   |   3   |    14    |   10  |
+    P3 |   9   |   0   |    11    |   2   |
+    P4 |   10  |   12  |    0     |   12  |
+    P5 |   16  |   1   |    13    |   7   |
+
+
+b) Turnaround Times:
+       | FCFS  | SJF   | Priority | RR    |
+       ------------------------------------
+    P1 |   5   |  12   |   11     |  16   |
+    P2 |   9   |  7    |   18     |  13   |
+    P3 |   10  |  1    |   12     |  3    |
+    P4 |   16  |  18   |   6      |  18   |
+    P5 |   18  |  3    |   14     |  9    |
+
+
+      
+c) Scheduler with minimal average waiting time is SJF.
+
+d) SJF
+e) SJF
+f) SJF and Priority can have starvation
+g) RR
+
+---------
+Problem 4
+---------
+Placing 200, 350, 420, 100, 675
+First-Fit:
+		300 460 110 360 700
+       	put 200 into 300
+        100 460 110 360 700
+	put 350 into 460
+	100 110 110 360 700
+	put 420 into 700
+	100 110 110 360 280
+	put 100 into 100
+	000 110 110 360 280
+	675 cannot fit and must wait
+Best-Fit:
+	300 460 110 360 700
+	put 200 into 300
+	100 460 110 360 700
+	put 350 into 360
+	100 460 110 010 700
+	put 420 into 460
+	100 040 110 010 700
+	put 100 into 100
+	000 040 110 010 700
+	put 675 into 700
+	000 040 110 010 025
+Worst-Fit:
+	300 460 110 360 700
+	put 200 into 700
+	300 460 110 360 500
+	put 350 into 500
+	300 460 110 360 150
+	put 420 into 460
+	300 040 110 360 150
+	put 100 into 360
+	300 040 110 260 150
+	675 cannot fit and must wait
+
+
+Most efficient is Best-Fit.

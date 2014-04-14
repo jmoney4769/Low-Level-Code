@@ -1,0 +1,14 @@
+// Symbol Table
+// Scope level 0:
+//	Symbol Name       Page Address
+//	----------------  ------------
+//	stack             0030
+//	endMult           002F
+//	loop              002B
+//	mult              0028
+//	allDone           0025
+//	end               0017
+//	endZero           0016
+//	fpExists          000E
+//	factorial         000B
+//	main              0000

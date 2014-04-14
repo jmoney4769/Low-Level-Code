@@ -1,0 +1,21 @@
+Answers.txt
+Jared Moore
+902897004
+CS2200
+HW1
+
+a)  Registers will be used similarly to how they are described in the hw1 pdf:
+$zero is always zero
+$at is reserved for the assembler, and is not touched by the user
+$v0 is used as the value to return from any subroutine
+$a0-2 are used as arguments to pass to subroutines, if more arguments are necessary, they can be placed on the stack
+$t0-2 are used as temporary variables such that the value should be expected to change when calling a subroutine
+$s0-2 are used as saved values if there is a value that the caller wants to keep without putting it on the stack
+$k0 reserved for OS
+$sp is used as the stack pointer and will point to the beginning of the stack always
+$fp is used as the frame pointer which will point to the current part of the stack being used
+$ra will be used to store the address of where to return to once a subroutine reaches its end
+
+b)  The stack will be accessed via the frame pointer.  The stack pointer will always point to the beginning of the stack.  When the frame pointer == the stack pointer, the user knows there are no values on the stack (except the one at that particular address).  The stack will grow up, with increasing memory addresses as more values are placed on it.
+
+c)  

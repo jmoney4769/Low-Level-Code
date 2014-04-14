@@ -1,0 +1,136 @@
+CS 2200 Fall 2013
+Homework 4
+===================
+NAME HERE
+Fall 2013
+===================
+
+Problem 0
+---------
+~~~~~~
+Part A
+~~~~~~
+i. A and B
+ii. 2 were necessary.  1 to see if it is valid and another to see get the pfn.
+iii. 8.2 ms.
+iv. 0101 0110  
+
+~~~~~~
+Part B
+~~~~~~
+LRU:  8 page faults
+FIFO:  6 page faults
+Optimal Replacement:  6 page faults
+
+Problem 1
+---------
+~~~~~~
+Part A
+~~~~~~
+
+references:          1KB, 16B block, direct-mapped
+-----------          -----------------------------
+0x00000000:                   _M_           <--- mark whether it's a
+0x00000006:                   _H_                hit or miss in the cache
+0x00000100:                   _M_
+0x00000104:                   _H_
+0x00001000:                   _M_
+0x00001040:                   _M_
+
+0x00000000:                   _M_
+0x00000006:                   _H_
+0x00000100:                   _H_
+0x00000104:                   _H_
+0x00001000:                   _M_
+0x00001040:                   _H_
+
+0x00000000:                   _M_
+0x00000006:                   _H_
+0x00000100:                   _H_
+0x00000104:                   _H_
+0x00001000:                   _M_
+0x00001040:                   _H_
+
+[... repeats forever ...]
+                                    long-term hit rate:  __66%____
+
+~~~~~~
+Part B
+~~~~~~
+
+references:          1KB, 16B block, 2-way set associative
+-----------          -------------------------------------
+0x00000000:                   _M_           <--- mark whether it's a
+0x00000006:                   _H_                hit or miss in the cache
+0x00000100:                   _M_
+0x00000104:                   _H_
+0x00001000:                   _M_
+0x00001040:                   _M_
+
+0x00000000:                   _H_
+0x00000006:                   _H_
+0x00000100:                   _H_
+0x00000104:                   _H_
+0x00001000:                   _H_
+0x00001040:                   _H_
+
+0x00000000:                   _H_
+0x00000006:                   _H_
+0x00000100:                   _H_
+0x00000104:                   _H_
+0x00001000:                   _H_
+0x00001040:                   _H_
+
+[... repeats forever ...]
+                                    long-term hit rate:  ___100%____
+---------
+Problem 2
+---------
+~~~~~~
+Part A
+~~~~~~
+a = address bits = 32
+b = offset bits = log2(block size) = log2(512) = 9
+l = number of sets = data size / (ways * block size) = 1048576 / (16 * 512) = 128
+n = bits for index = log2(l) = 4
+t = bits for tag = a - (b + n) = 32 - (9 + 4) = 19
+r = log2(number of ways) = log2(16) = 4
+LRU replacement = log2(ways!) = log2(16!) = 44
+Tag storage size = (t + 1(valid) + 1(write-back) or 0(write-through) + r + LRU bits) * sets * ways = (19 + 1 + 1 + 4 + 44) * 16 * 128 = 51200
+Total size = data + tag = 1048576 + 51200 = 1099776 bytes = 1074 KB
+
+---------
+Problem 3
+---------
+~~~~~~
+Part A
+~~~~~~
+EMAT = 1cycle + (0.05misses * 40cycles/miss) = 3cycles
+
+~~~~~~
+Part B
+~~~~~~
+NEW EMAT = 2cycles + (0.03misses * 40cycles/miss) = 3.2cycles
+This is not an improvement, as the EMAT went up.
+~~~~~~
+Part C
+~~~~~~
+(a) Machine A: EMAT = 1cycles + (.05misses * 60cycles/miss = 3cycles
+Machine B:  EMAT = 2cycles + (.03misses * 30cycles/miss = 1.9cycles
+Machine B has a better EMAT
+(b) It is not a sufficient measurement because EMAT is only in clock cycles, not taking into account that different machines have clock cycles of different speeds.
+(c) Machine A is actually better because if you convert the cycles into ns (multiply A by 1ns/cycle and B by 2ns/cycle), Machine A performs faster than Machine B (3ns < 3.8ns)
+~~~~~~
+Part D
+~~~~~~
+EMAT_physical = 100cycles
+EMAT_L3 = 20 + (.2 * EMAT_physical) = 20 + (.2 * 100) = 40cycles
+EMAT_L2 = 5 + (.1 * EMAT_L3) = 5 + (.1 * 40) = 9cycles
+EMAT_L1 = 1 + (.01 * EMAT_L2) = 1 + (.01 * 9) = 1.09cycles
+EMAT_ALL = 1 + (.05 * EMAT_L1) = 1 + (.05 * 1.09) = 1.0545
+---------
+Problem 4
+---------
+
+Problem 4 involves coding certain portions of hw4.c
+

@@ -1,0 +1,2 @@
+#!/bin/bash
+./prj5-server.py -p 4000 -c .4

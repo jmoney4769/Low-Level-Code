@@ -1,0 +1,6 @@
+#!/bin/bash
+rm ~/CS2200/hw4/hw4.c
+cp ~/workspace/HW4/hw4.c ~/CS2200/hw4/
+make clean
+make
+gdb hw4 longlist

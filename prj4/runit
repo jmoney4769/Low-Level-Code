@@ -1,0 +1,8 @@
+#!/bin/bash
+make clean
+rm ~/CS2200/prj4/*.c
+rm ~/CS2200/prj4/*.h
+cp ~/workspace/Project\ 4/*.c ~/CS2200/prj4/
+cp ~/workspace/Project\ 4/*.h ~/CS2200/prj4/
+make all
+gdb ./os-sim 
